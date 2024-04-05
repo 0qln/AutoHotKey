@@ -5,8 +5,8 @@ BoundY := SysGet(79)
 
 ^!l::MoveWinH("R")
 ^!h::MoveWinH("L")
-^!l::MoveWinV("U")
-^!h::MoveWinV("D")
+^!k::MoveWinV("U")
+^!j::MoveWinV("D")
 
 /*
 LR: 
@@ -43,7 +43,7 @@ UD:
     "U" for up
     "D" for down
 */
-MoveWinH(UD) {
+MoveWinV(UD) {
     WinTitle := WinGetTitle("A")
     WinStyle := WinGetStyle(WinTitle)
     WinIsMax := WinStyle & 0x1000000
