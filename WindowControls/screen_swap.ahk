@@ -5,6 +5,8 @@ BoundY := SysGet(79)
 
 ^!l::MoveWinH("R")
 ^!h::MoveWinH("L")
+^!l::MoveWinV("U")
+^!h::MoveWinV("D")
 
 /*
 LR: 
@@ -36,23 +38,33 @@ MoveWinH(LR) {
     }
 }
 
-
-^!k::MoveUp()
-MoveUp() {
+/*
+UD: 
+    "U" for up
+    "D" for down
+*/
+MoveWinH(UD) {
     WinTitle := WinGetTitle("A")
+    WinStyle := WinGetStyle(WinTitle)
+    WinIsMax := WinStyle & 0x1000000
+
+    ; Restore windowed state of the window if it is maximized.
+    if (WinIsMax) {
+        WinRestore WinTitle
+    }
+
+    ; Move the Window
     WinGetPos &X, &Y, &W, &H, WinTitle
-    NewY := Y + A_ScreenHeight
-    if (NewY < BoundY) {
-        WinMove (X), (NewY),,, WinTitle
+    mul := (UD == "D") ? (-1) : (1)
+    NewY := Y + (A_ScreenHeight * mul)
+    InBounds := (UD == "D") ? (NewY >= 0) : (NewY < BoundY) 
+    if (InBounds) { 
+        WinMove (X), (NewY),,, WinTitle 
+    }
+
+    ; Remaximize the window
+    if (WinIsMax) {
+        WinMaximize WinTitle
     }
 }
 
-^!j::MoveDown()
-MoveDown() {
-    WinTitle := WinGetTitle("A")
-    WinGetPos &X, &Y, &W, &H, WinTitle
-    NewY := Y - A_ScreenHeight
-    if (NewY > 0) {
-        WinMove (X), (NewY),,, WinTitle
-    }
-}
