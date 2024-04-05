@@ -5,7 +5,7 @@
 ;=========================================================;
 ; instead of "Restore Down" for Win+Down
 
-#!Down::Minimize()
+^!m::Minimize()
 
 Minimize() {
     WinMinimize("A")
