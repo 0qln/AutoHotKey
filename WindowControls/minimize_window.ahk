@@ -9,5 +9,4 @@
 
 Minimize() {
     WinMinimize("A")
-    ; TODO: set active the last window
 }
