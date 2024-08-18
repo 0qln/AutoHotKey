@@ -1,10 +1,118 @@
 #Requires AutoHotkey v2.0
 
-BoundX := SysGet(78)
-BoundY := SysGet(79)
 
-^!l::MoveWin("R")
++!h::NavigateWin("L")
++!l::NavigateWin("R")
++!k::NavigateWin("U")
++!j::NavigateWin("D")
+
+NavigateWin(Direction) {
+    hwin := WinGetId("A")
+    nearestWin := 0
+    primaryDistToNearest := 999999
+    secondaryDistToNearest := 999999
+    for win in WinGetList(,,) {
+        if win = hwin {
+            continue
+        }
+
+        winStyle := WinGetStyle(win) 
+        winWasVisible := winStyle & 0x10000000
+        winIsHidden := winStyle & 0x20000000
+        if !winWasVisible or winIsHidden {
+            continue
+        }
+
+        switch Direction {
+            case "L": predicate := IsCloserLeft
+            case "R": predicate := IsCloserRight
+            case "U": predicate := IsCloserUp
+            case "D": predicate := IsCloserDown
+        }
+
+        WinGetPos &targetX, &targetY,,, hwin
+        WinGetPos &winX, &winY,,, win
+        if predicate(targetX, targetY, winX, winY, &primaryDistToNearest, &secondaryDistToNearest) {
+            nearestWin := win
+        }
+    }
+
+    if (nearestwin != 0) {
+        WinActivate(nearestWin)
+    }
+}
+
+IsCloserLeft(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
+    newPrimaryDist := targetX - winX
+    newSecondaryDist := abs(winY - targetY)
+    inBounds :=  winX < targetX
+
+    if inBounds and (
+            newPrimaryDist < primaryDist 
+            or (newPrimaryDist = primaryDist and newSecondaryDist < secondaryDist)
+        ) {
+        primaryDist := newPrimaryDist
+        secondaryDist := newSecondaryDist
+        return true
+    }
+
+    return false
+}
+
+IsCloserRight(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
+    newPrimaryDist := winX - targetX
+    newSecondaryDist := abs(winY - targetY)
+    inBounds := winX > targetX
+
+    if inBounds and (
+            newPrimaryDist < primaryDist 
+            or (newPrimaryDist = primaryDist and newSecondaryDist < secondaryDist)
+        ) {
+        primaryDist := newPrimaryDist
+        secondaryDist := newSecondaryDist
+        return true
+    }
+
+    return false
+}
+
+IsCloserUp(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
+    newPrimaryDist := targetY - winY
+    newSecondaryDist := abs(winX - targetX)
+    inBounds := winY < targetY
+
+    if inBounds and (
+            newPrimaryDist < primaryDist 
+            or (newPrimaryDist = primaryDist and newSecondaryDist < secondaryDist)
+        ) {
+        primaryDist := newPrimaryDist
+        secondaryDist := newSecondaryDist
+        return true
+    }
+
+    return false
+}
+
+IsCloserDown(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
+    newPrimaryDist := winY - targetY
+    newSecondaryDist := abs(winX - targetX)
+    inBounds := winY > targetY
+
+    if inBounds and (
+            newPrimaryDist < primaryDist 
+            or (newPrimaryDist = primaryDist and newSecondaryDist < secondaryDist)
+        ) {
+        primaryDist := newPrimaryDist
+        secondaryDist := newSecondaryDist
+        return true
+    }
+
+    return false
+}
+
+
 ^!h::MoveWin("L")
+^!l::MoveWin("R")
 ^!k::MoveWin("U")
 ^!j::MoveWin("D")
 
@@ -58,7 +166,6 @@ MoveWin(Direction) {
         WinMaximize WinId
     }
 }
-
 GetMonitorLeft(monitorHandle) {
     MonitorGet(monitorHandle, &oldMonitorLeft, &oldMonitorTop, &oldMonitorRight, &oldMonitorBottom)
     loop MonitorGetCount() {
