@@ -1,5 +1,34 @@
 #Requires AutoHotkey v2.0
 
+TestWindowSearch() {
+    ids := WinGetList(,,,)
+    for this_id in ids
+    {
+        istoolbar := WinGetExStyle(this_id) & 0x00000080
+        if istoolbar {
+            continue
+        }
+        this_title := WinGetTitle(this_id)
+        this_visible := IsWindowVisible(this_id)
+        WinGetPos &x, &y, &w, &h, this_id
+        Result := MsgBox(
+        (
+            "Visiting All Windows
+            " A_Index " of " ids.Length "
+            Title: " this_title "
+            Vibile: " this_visible "
+            X: " x "
+            Y: " y "
+            W: " w "
+            H: " h "
+            Id: " this_id "
+
+            Continue?"
+        ),, 4)
+        if (Result = "No")
+            break
+    }
+}
 
 +!h::NavigateWin("L")
 +!l::NavigateWin("R")
@@ -16,10 +45,11 @@ NavigateWin(Direction) {
             continue
         }
 
-        winStyle := WinGetStyle(win) 
-        winWasVisible := winStyle & 0x10000000
-        winIsHidden := winStyle & 0x20000000
-        if !winWasVisible or winIsHidden {
+        if WinGetExStyle(win) & 0x00000080 {
+            continue
+        }
+
+        if IsWindowVisible(win) < 4 {
             continue
         }
 
@@ -40,6 +70,34 @@ NavigateWin(Direction) {
     if (nearestwin != 0) {
         WinActivate(nearestWin)
     }
+}
+
+IsWindowVisible(hwnd) { 
+    if WinGetStyle(hwnd) & 0x20000000 {
+        return 0
+    }
+
+    cornerRadius := 20
+    WinGetPos &X, &Y, &W, &H, hwnd
+
+    count := 
+          (hwnd == WindowFromPoint(X + cornerRadius, Y + cornerRadius) ? 1 : 0) 
+        + (hwnd == WindowFromPoint(X + cornerRadius, Y + H - cornerRadius) ? 1 : 0) 
+        + (hwnd == WindowFromPoint(X + W - cornerRadius, Y + cornerRadius) ? 1 : 0) 
+        + (hwnd == WindowFromPoint(X + W - cornerRadius, Y + H - cornerRadius) ? 1 : 0) 
+        + (hwnd == WindowFromPoint(X + W // 2, Y + H // 2) ? 1 : 0)
+
+    return count
+}
+
+WindowFromPoint(X, Y) {
+    point := (Y << 32) + X
+    return DllCall("WindowFromPoint", "UInt64", point)
+    ; return DllCall(
+    ;     "GetAncestor",
+    ;     "Ptr", DllCall("WindowFromPoint", "UInt64", point),
+    ;     "UInt", 2
+    ; )
 }
 
 IsCloserLeft(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
@@ -229,20 +287,20 @@ GetMonitorFromHmonitor(monitorHandle) {
     monitorInfo := Buffer(40)
     NumPut("UInt", monitorInfo.Size, monitorInfo)
     DllCall("User32.dll\GetMonitorInfo", "UInt", monitorHandle, "Ptr", monitorInfo)
-	monitorLeft   := NumGet(monitorInfo,  4, "Int")
-	monitorTop    := NumGet(monitorInfo,  8, "Int")
-	monitorRight  := NumGet(monitorInfo, 12, "Int")
-	monitorBottom := NumGet(monitorInfo, 16, "Int")
+    monitorLeft   := NumGet(monitorInfo,  4, "Int")
+    monitorTop    := NumGet(monitorInfo,  8, "Int")
+    monitorRight  := NumGet(monitorInfo, 12, "Int")
+    monitorBottom := NumGet(monitorInfo, 16, "Int")
 
-	Loop MonitorGetCount() {
-		MonitorGet(A_Index, &monLeft, &monTop, &monRight, &monBottom)
-		if (monitorLeft = monLeft && monitorTop = monTop && 
-            monitorRight = monRight && monitorBottom = monBottom) {
-			return A_Index
-		}
-	}
+    Loop MonitorGetCount() {
+            MonitorGet(A_Index, &monLeft, &monTop, &monRight, &monBottom)
+            if (monitorLeft = monLeft && monitorTop = monTop && 
+        monitorRight = monRight && monitorBottom = monBottom) {
+                    return A_Index
+            }
+    }
 
-	return false
+    return false
 }
 
 
