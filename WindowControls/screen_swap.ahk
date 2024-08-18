@@ -60,9 +60,13 @@ NavigateWin(Direction) {
             case "D": predicate := IsCloserDown
         }
 
-        WinGetPos &targetX, &targetY,,, hwin
-        WinGetPos &winX, &winY,,, win
-        if predicate(targetX, targetY, winX, winY, &primaryDistToNearest, &secondaryDistToNearest) {
+        WinGetPos &targetX, &targetY, &targetW, &targetH, hwin
+        WinGetPos &winX, &winY, &winW, &winH, win
+        if predicate(
+            targetX + targetW / 2, targetY + targetH / 2, 
+            winX + winW / 2, winY + winH / 2,
+            &primaryDistToNearest, &secondaryDistToNearest
+        ) {
             nearestWin := win
         }
     }
@@ -103,7 +107,12 @@ WindowFromPoint(X, Y) {
 IsCloserLeft(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
     newPrimaryDist := targetX - winX
     newSecondaryDist := abs(winY - targetY)
-    inBounds :=  winX < targetX
+
+    ; Describes the 45 degree cone to the left of the target 
+    inBounds :=  winX < targetX and (
+        (winY >= targetY and winY <= f1(winX, targetX, targetY)) or
+        (winY <= targetY and winY >= f2(winX, targetX, targetY))
+    )
 
     if inBounds and (
             newPrimaryDist < primaryDist 
@@ -120,7 +129,12 @@ IsCloserLeft(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
 IsCloserRight(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
     newPrimaryDist := winX - targetX
     newSecondaryDist := abs(winY - targetY)
-    inBounds := winX > targetX
+
+    ; Describes the 45 degree cone to the right of the target 
+    inBounds := winX > targetX and (
+        (winY >= targetY and winY <= f2(winX, targetX, targetY)) or
+        (winY <= targetY and winY >= f1(winX, targetX, targetY))
+    )
 
     if inBounds and (
             newPrimaryDist < primaryDist 
@@ -137,7 +151,12 @@ IsCloserRight(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
 IsCloserUp(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
     newPrimaryDist := targetY - winY
     newSecondaryDist := abs(winX - targetX)
-    inBounds := winY < targetY
+
+    ; Describes the 45 degree cone above the target 
+    inBounds := winY < targetY and (
+        winY <= f1(winX, targetX, targetY) and
+        winY <= f2(winX, targetX, targetY)
+    )
 
     if inBounds and (
             newPrimaryDist < primaryDist 
@@ -154,7 +173,12 @@ IsCloserUp(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
 IsCloserDown(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
     newPrimaryDist := winY - targetY
     newSecondaryDist := abs(winX - targetX)
-    inBounds := winY > targetY
+
+    ; Describes the 45 degree cone below the target 
+    inBounds := winY > targetY and (
+        winY >= f2(winX, targetX, targetY) and
+        winY >= f1(winX, targetX, targetY)
+    )
 
     if inBounds and (
             newPrimaryDist < primaryDist 
@@ -166,6 +190,14 @@ IsCloserDown(targetX, targetY, winX, winY, &primaryDist, &secondaryDist) {
     }
 
     return false
+}
+
+f1(x, px, py) { 
+    return -(x - px) + py 
+}
+
+f2(x, px, py) { 
+    return (x - px) + py 
 }
 
 
