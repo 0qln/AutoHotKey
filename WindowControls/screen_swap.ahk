@@ -1,5 +1,8 @@
 #Requires AutoHotkey v2.0
 
+
+
+
 TestWindowSearch() {
     ids := WinGetList(,,,)
     for this_id in ids
