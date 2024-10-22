@@ -222,8 +222,8 @@ MoveWin(Direction) {
     oldRelY := oldAbsY - oldMonitorTop
     oldMonW := oldMonitorRight - oldMonitorLeft
     oldMonH := oldMonitorBottom - oldMonitorTop
-    u := oldRelX / oldMonW
-    v := oldRelY / oldMonH
+    oldMonNormX := oldRelX / oldMonW
+    oldMonNormY := oldRelY / oldMonH
     oldScaleX := oldW / oldMonW
     oldScaleY := oldH / oldMonH
 
@@ -243,8 +243,8 @@ MoveWin(Direction) {
         MonitorGet(newMonitor, &newMonitorLeft, &newMonitorTop, &newMonitorRight, &newMonitorBottom)
         newMonW := newMonitorRight - newMonitorLeft
         newMonH := newMonitorBottom - newMonitorTop
-        newRelX := u * oldMonW
-        newRelY := v * oldMonH
+        newRelX := oldMonNormX * newMonW
+        newRelY := oldMonNormY * newMonH
         newAbsX := newRelX + newMonitorLeft
         newAbsY := newRelY + newMonitorTop
         newW := oldScaleX * newMonW
