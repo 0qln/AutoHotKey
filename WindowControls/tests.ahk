@@ -1,4 +1,5 @@
 #Requires AutoHotkey v2.0
+#Include utils.ahk
 
 TestWindowSearch() {
     ids := WinGetList(,,,)

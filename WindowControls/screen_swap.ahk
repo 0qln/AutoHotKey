@@ -1,48 +1,57 @@
 #Requires AutoHotkey v2.0
+#Include utils.ahk
 
-^!h::MoveWin("L")
-^!l::MoveWin("R")
-^!k::MoveWin("U")
-^!j::MoveWin("D")
+^!h::MoveAWin("L")
+^!l::MoveAWin("R")
+^!k::MoveAWin("U")
+^!j::MoveAWin("D")
+
+^!+h::MoveAllWin("L")
+^!+l::MoveAllWin("R")
+^!+k::MoveAllWin("U")
+^!+j::MoveAllWin("D")
 
 ; If you want to the window to take on a 
 ; more usable size when swapping to a monitor with 
 ; different orientation, set SmartSwap to True
 SmartSwap := True
 
-MoveWin(Direction) {
-    ; Get the current window's state
-    WinId := WinGetId("A")
-    WinStyle := WinGetStyle(WinId)
-    WinIsMax := WinStyle & 0x1000000
-
-    ; Get the monitor that the window is on
-    oldMonitor := GetMonitorFromHwnd(WinId)
-
-    ; Get the new monitor that the window will be moved to
-    newMonitor := 0
-    switch Direction {
-        case "L":
-            newMonitor := GetMonitorLeft(oldMonitor)
-        case "R":
-            newMonitor := GetMonitorRight(oldMonitor)
-        case "U":
-            newMonitor := GetMonitorTop(oldMonitor)
-        case "D":
-            newMonitor := GetMonitorBottom(oldMonitor)
+; Move all windowed windows on the current monitor 
+; in the specified direction
+MoveAllWin(direction) {
+    ; Find all windowes that should get moved
+    activeWin := WinGetId("A")
+    activeMon := GetMonitorFromHwnd(activeWin)
+    wins := WinGetList(,,,)
+    winsToMove := Array()
+    for winId in wins {
+        if (WinGetStyle(winId) & 0x1000000) {
+            continue
+        }
+        if (IsWindowVisible(winId) < 5) {
+            continue
+        }
+        if (GetMonitorFromHwnd(winId) != activeMon) {
+            continue
+        }
+        winsToMove.Push(winId)
     }
 
-    ; If there is no monitor that the window can be moved to, abort
-    if (NewMonitor = 0) {
-        return
+    ; Move the windows after deciding which ones to move to reduce lag
+    newMonitor := GetMonitorInDirection(activeMon, direction)
+    for winId in winsToMove {
+        MoveWinRestored(winId, activeMon, newMonitor)
     }
+}
 
-    ; If the window is maximized, restore it
-    if (WinIsMax) {
-        WinRestore WinId
-    }
+; Move the active window in the specified direction
+MoveAWin(direction) {
+    winId := WinGetId("A")
+    MoveWin(direction, winId)
+}
 
-    ; Calculate new position and size, then move the window
+; Moves a restored window from the specified monitor to another monitor
+MoveWinRestored(winId, oldMonitor, newMonitor) {
     WinGetPos &oldAbsX, &oldAbsY, &oldW, &oldH, WinId
     MonitorGet(oldMonitor, &oldMonitorLeft, &oldMonitorTop, &oldMonitorRight, &oldMonitorBottom)
     oldMonW := oldMonitorRight - oldMonitorLeft
@@ -85,13 +94,45 @@ MoveWin(Direction) {
         newH := oldScaleY * newMonH
     }
 
-    WinMove newAbsX, newAbsY, newW, newH, WinId 
+    WinMove newAbsX, newAbsY, newW, newH, WinId
+}
+
+GetMonitorInDirection(monRelativeTo, direction) {
+    switch direction {
+        case "L": return GetMonitorLeft(monRelativeTo)
+        case "R": return GetMonitorRight(monRelativeTo)
+        case "U": return GetMonitorTop(monRelativeTo)
+        case "D": return GetMonitorBottom(monRelativeTo)
+    }
+    return 0
+}
+
+; Move the specified window in the specified direction
+MoveWin(direction, winId) {
+    winStyle := winGetStyle(winId)
+    winIsMax := winStyle & 0x1000000
+    oldMonitor := GetMonitorFromHwnd(winId)
+    newMonitor := GetMonitorInDirection(oldMonitor, direction)
+
+    ; If there is no monitor that the window can be moved to, abort
+    if (newMonitor = 0) { 
+        return 
+    }
+
+    ; If the window is maximized, restore it
+    if (winIsMax) { 
+        WinRestore winId 
+    }
+
+    ; Calculate new position and size, then move the window
+    MoveWinRestored(winId, oldMonitor, newMonitor)
     
     ; If the window was maximized, maximize it
-    if (WinIsMax) {
-        WinMaximize WinId
+    if (winIsMax) { 
+        WinMaximize winId 
     }
 }
+
 GetMonitorLeft(monitorHandle) {
     MonitorGet(monitorHandle, &oldMonitorLeft, &oldMonitorTop, &oldMonitorRight, &oldMonitorBottom)
     loop MonitorGetCount() {
@@ -138,14 +179,14 @@ GetMonitorBottom(monitorHandle) {
 
 
 GetMonitorFromHwnd(winId) {
-	if (MonitorGetCount() = 1) {
-		return 1
-	}
+    if (MonitorGetCount() = 1) {
+        return 1
+    }
 
     MONITOR_DEFAULTTONEAREST := 2
-	if !(monitorHandle := DllCall("User32.dll\MonitorFromWindow", "UInt", winId, "UInt", MONITOR_DEFAULTTONEAREST)) {
+    if !(monitorHandle := DllCall("User32.dll\MonitorFromWindow", "UInt", winId, "UInt", MONITOR_DEFAULTTONEAREST)) {
         return false
-	}
+    }
 
     return GetMonitorFromHmonitor(monitorHandle)
 }
@@ -161,11 +202,11 @@ GetMonitorFromHmonitor(monitorHandle) {
     monitorBottom := NumGet(monitorInfo, 16, "Int")
 
     Loop MonitorGetCount() {
-            MonitorGet(A_Index, &monLeft, &monTop, &monRight, &monBottom)
-            if (monitorLeft = monLeft && monitorTop = monTop && 
-        monitorRight = monRight && monitorBottom = monBottom) {
-                    return A_Index
-            }
+        MonitorGet(A_Index, &monLeft, &monTop, &monRight, &monBottom)
+        if (monitorLeft = monLeft && monitorTop = monTop && 
+            monitorRight = monRight && monitorBottom = monBottom) {
+            return A_Index
+        }
     }
 
     return false
