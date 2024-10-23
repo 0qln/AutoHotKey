@@ -5,27 +5,21 @@
 ^!k::MoveWin("U")
 ^!j::MoveWin("D")
 
+; If you want to the window to take on a 
+; more usable size when swapping to a monitor with 
+; different orientation, set SmartSwap to True
+SmartSwap := True
+
 MoveWin(Direction) {
+    ; Get the current window's state
     WinId := WinGetId("A")
     WinStyle := WinGetStyle(WinId)
     WinIsMax := WinStyle & 0x1000000
 
-    if (WinIsMax) {
-        WinRestore WinId
-    }
-
+    ; Get the monitor that the window is on
     oldMonitor := GetMonitorFromHwnd(WinId)
-    WinGetPos &oldAbsX, &oldAbsY, &oldW, &oldH, WinId
-    MonitorGet(oldMonitor, &oldMonitorLeft, &oldMonitorTop, &oldMonitorRight, &oldMonitorBottom)
-    oldRelX := oldAbsX - oldMonitorLeft
-    oldRelY := oldAbsY - oldMonitorTop
-    oldMonW := oldMonitorRight - oldMonitorLeft
-    oldMonH := oldMonitorBottom - oldMonitorTop
-    oldMonNormX := oldRelX / oldMonW
-    oldMonNormY := oldRelY / oldMonH
-    oldScaleX := oldW / oldMonW
-    oldScaleY := oldH / oldMonH
 
+    ; Get the new monitor that the window will be moved to
     newMonitor := 0
     switch Direction {
         case "L":
@@ -38,19 +32,62 @@ MoveWin(Direction) {
             newMonitor := GetMonitorBottom(oldMonitor)
     }
 
-    if !(newMonitor = 0) {
-        MonitorGet(newMonitor, &newMonitorLeft, &newMonitorTop, &newMonitorRight, &newMonitorBottom)
-        newMonW := newMonitorRight - newMonitorLeft
-        newMonH := newMonitorBottom - newMonitorTop
+    ; If there is no monitor that the window can be moved to, abort
+    if (NewMonitor = 0) {
+        return
+    }
+
+    ; If the window is maximized, restore it
+    if (WinIsMax) {
+        WinRestore WinId
+    }
+
+    ; Calculate new position and size, then move the window
+    WinGetPos &oldAbsX, &oldAbsY, &oldW, &oldH, WinId
+    MonitorGet(oldMonitor, &oldMonitorLeft, &oldMonitorTop, &oldMonitorRight, &oldMonitorBottom)
+    oldMonW := oldMonitorRight - oldMonitorLeft
+    oldMonH := oldMonitorBottom - oldMonitorTop
+    oldAspectRatio := oldMonW / oldMonH
+    oldRelX := oldAbsX - oldMonitorLeft
+    oldRelY := oldAbsY - oldMonitorTop
+    oldMonNormX := oldRelX / oldMonW
+    oldMonNormY := oldRelY / oldMonH
+    oldScaleX := oldW / oldMonW
+    oldScaleY := oldH / oldMonH
+
+    MonitorGet(newMonitor, &newMonitorLeft, &newMonitorTop, &newMonitorRight, &newMonitorBottom)
+    newMonW := newMonitorRight - newMonitorLeft
+    newMonH := newMonitorBottom - newMonitorTop
+    newAspectRatio := newMonW / newMonH
+
+    if (SmartSwap && 
+        ; If the new monitor has a wastly different aspect ratio, 
+        ; hinting at a different monitor orientation: 
+        ((oldAspectRatio < 1 && newAspectRatio > 1) || 
+         (oldAspectRatio > 1 && newAspectRatio < 1))) {
+        ; scale the window to a fitting size 
+        newRelX := oldMonNormY * newMonW
+        newRelY := oldMonNormX * newMonH
+        newAbsX := newRelX + newMonitorLeft
+        newAbsY := newRelY + newMonitorTop
+        newW := oldScaleY * newMonW
+        newH := oldScaleX * newMonH
+    }
+    else {
+        ; The default:
+        ; scale the window such that it fits the new monitor size,
+        ; and keeps it's aspect ratio
         newRelX := oldMonNormX * newMonW
         newRelY := oldMonNormY * newMonH
         newAbsX := newRelX + newMonitorLeft
         newAbsY := newRelY + newMonitorTop
         newW := oldScaleX * newMonW
         newH := oldScaleY * newMonH
-        WinMove newAbsX, newAbsY, newW, newH, WinId 
     }
+
+    WinMove newAbsX, newAbsY, newW, newH, WinId 
     
+    ; If the window was maximized, maximize it
     if (WinIsMax) {
         WinMaximize WinId
     }
