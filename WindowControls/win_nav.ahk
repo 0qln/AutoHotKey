@@ -6,17 +6,14 @@
 +!k::NavigateWin("U")
 +!j::NavigateWin("D")
 
-NavigateWin(Direction) {
+NavigateWin(dir) {
     hwin := WinGetId("A")
+    WinGetPos &targetX, &targetY, &targetW, &targetH, hwin
     nearestWin := 0
     primaryDistToNearest := 999999
     secondaryDistToNearest := 999999
     for win in WinGetList() {
-        chromeLegacyWindow := IsChromeLegacyWindow(win)
-        if chromeLegacyWindow {
-            win := GetChildWindow(win)
-        }
-
+        original_win := win
         if win = hwin {
             continue
         }
@@ -25,30 +22,28 @@ NavigateWin(Direction) {
             continue
         }
 
+        if IsChromeLegacyWindow(win) {
+            win := GetChildWindow(win)
+        }
+
         if IsWindowVisible(win) < 4 {
             continue
         }
 
-        switch Direction {
+        switch dir {
             case "L": predicate := IsCloserLeft
             case "R": predicate := IsCloserRight
             case "U": predicate := IsCloserUp
             case "D": predicate := IsCloserDown
         }
 
-        WinGetPos &targetX, &targetY, &targetW, &targetH, hwin
         WinGetPos &winX, &winY, &winW, &winH, win
         if predicate(
             targetX + targetW / 2, targetY + targetH / 2, 
             winX + winW / 2, winY + winH / 2,
             &primaryDistToNearest, &secondaryDistToNearest
         ) {
-            if chromeLegacyWindow {
-                nearestWin := GetParentWindow(win)
-            }
-            else {
-                nearestWin := win
-            }
+            nearestWin := original_win
         }
     }
 
