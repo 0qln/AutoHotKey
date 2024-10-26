@@ -1,2 +1,3 @@
-**/zoneswap/target/**
-**/screenswap/target/**
+/WindowControls/screen_swap/target/
+/WindowControls/zone_swap/target/
+/WindowControls/window_controls/target

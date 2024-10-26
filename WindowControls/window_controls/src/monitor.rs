@@ -6,7 +6,7 @@ use windows::Win32::{
     Graphics::Gdi::{EnumDisplayMonitors, MonitorFromWindow, HDC, HMONITOR, MONITOR_FROM_FLAGS},
 };
 
-use crate::window::WindowModel;
+use crate::{misc::Direction, window::WindowModel};
 
 struct GetMonitorRectInfo {
     monitor_to_find: HMONITOR,
@@ -365,12 +365,12 @@ impl Monitor {
         })
     }
     
-    pub unsafe fn get_next_in_dir(&self, dir: crate::Direction) -> &Option<Rc<Monitor>> {
+    pub unsafe fn get_next_in_dir(&self, dir: Direction) -> &Option<Rc<Monitor>> {
         match dir {
-            crate::Direction::Up => self.get_up(),
-            crate::Direction::Down => self.get_down(),
-            crate::Direction::Left => self.get_left(),
-            crate::Direction::Right => self.get_right(),
+            Direction::Up => self.get_up(),
+            Direction::Down => self.get_down(),
+            Direction::Left => self.get_left(),
+            Direction::Right => self.get_right(),
         }
     }
 }

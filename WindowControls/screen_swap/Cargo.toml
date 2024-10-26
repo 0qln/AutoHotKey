@@ -1,0 +1,10 @@
+[package]
+name = "screen_swap"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+window_controls = { path = "../window_controls" } 

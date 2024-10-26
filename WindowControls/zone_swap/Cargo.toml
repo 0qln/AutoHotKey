@@ -1,0 +1,7 @@
+[package]
+name = "zone_swap"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+window_controls = { path = "../window_controls" } 

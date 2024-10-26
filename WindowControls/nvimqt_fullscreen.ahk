@@ -10,7 +10,7 @@ Fullscreen() {
     WinSetStyle -0x400000, WinTitle
     WinSetStyle -0x40000, WinTitle
 
-    ; window is now bugged out, a redraw will do the trick :)
+    ; window is now glitching, a redraw will do the trick :)
     WinMinimize("A")
     WinMaximize WinTitle
 }

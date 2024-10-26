@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
 ; Prefetch libaries
-Dll := DllCall("LoadLibrary", "Str", "..\target\debug\screenswap.dll", "Ptr")
+Dll := DllCall("LoadLibrary", "Str", "screen_swap.dll", "Ptr")
 MoveActiveWin := DllCall("GetProcAddress", "Ptr", Dll, "AStr", "move_active_win", "Ptr")
 MoveAllWin := DllCall("GetProcAddress", "Ptr", Dll, "AStr", "move_all_win", "Ptr")
 

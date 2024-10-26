@@ -1,17 +1,12 @@
-#![allow(dead_code)]
-
-use misc::Direction;
-use monitor::Monitor;
-use window::{state, Window, WindowModel};
-use windows::{
-    core::PCSTR,
-    Win32::{
-        Foundation::{BOOL, HWND, LPARAM, RECT},
-        Graphics::Gdi::{MonitorFromWindow, HMONITOR, MONITOR_FROM_FLAGS},
-        UI::WindowsAndMessaging::{
-            EnumWindows, GetForegroundWindow, MessageBoxA, MESSAGEBOX_STYLE,
-        },
-    },
+use window_controls::windows::Win32::{
+    Foundation::{BOOL, HWND, LPARAM, RECT},
+    Graphics::Gdi::{MonitorFromWindow, HMONITOR, MONITOR_FROM_FLAGS},
+    UI::WindowsAndMessaging::{EnumWindows, GetForegroundWindow},
+};
+use window_controls::{
+    misc::Direction,
+    monitor::Monitor,
+    window::{state, Window, WindowModel},
 };
 
 struct MoveWinInfo {
@@ -32,7 +27,7 @@ unsafe fn move_all_win(dir: Direction) {
     if new_monitor.is_none() {
         return;
     }
-    
+
     let new_monitor = new_monitor.as_deref().unwrap();
 
     let info = MoveWinInfo {
@@ -57,7 +52,7 @@ unsafe fn move_all_win(dir: Direction) {
         if win.is_maximized() || win.is_minimized() {
             return BOOL::from(true);
         }
-        
+
         if win.get_visibility() < 5 {
             return BOOL::from(true);
         }
@@ -69,15 +64,6 @@ unsafe fn move_all_win(dir: Direction) {
 
         BOOL::from(true)
     }
-}
-
-unsafe fn msgbox(msg: &str) {
-    MessageBoxA(
-        HWND::default(),
-        PCSTR::from_raw(format!("{}\0", msg).as_bytes().as_ptr() as *const u8),
-        PCSTR::from_raw(b"Message Box\0" as *const u8),
-        MESSAGEBOX_STYLE(0),
-    );
 }
 
 // Don't rename.
@@ -96,7 +82,7 @@ unsafe fn move_win(win: &WindowModel, dir: Direction) {
     if new_monitor.is_none() {
         return;
     }
-    
+
     let new_monitor = new_monitor.as_deref().unwrap();
 
     if win.is_maximized() {
@@ -109,12 +95,3 @@ unsafe fn move_win(win: &WindowModel, dir: Direction) {
         let _ = win.move_screen(*old_monitor.get_rect(), *new_monitor.get_rect());
     }
 }
-
-mod window;
-
-mod monitor;
-
-mod misc;
-
-#[cfg(test)]
-mod tests {}
