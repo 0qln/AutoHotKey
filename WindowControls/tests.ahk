@@ -2,31 +2,42 @@
 #Include utils.ahk
 
 TestWindowSearch() {
-    ids := WinGetList(,,,)
-    for this_id in ids
-    {
-        istoolbar := WinGetExStyle(this_id) & 0x00000080
-        if istoolbar {
-            continue
-        }
-        this_title := WinGetTitle(this_id)
-        this_visible := IsWindowVisible(this_id)
-        WinGetPos &x, &y, &w, &h, this_id
-        Result := MsgBox(
+    ids := WinGetList(, , ,)
+    for hwnd in ids {
+        if (DebugWindow(hwnd, false) = "No") {
+            break
+        } 
+    }
+}
+
+DebugWindow(hwnd, child) {
+    style := WinGetStyle(hwnd)
+    exStyle := WinGetExStyle(hwnd)
+    istoolbar := exStyle & 0x00000080 != 0
+    title := WinGetTitle(hwnd)
+    klass := WinGetClass(hwnd)
+    isVisible := IsWindowVisible(hwnd)
+    childWindow := GetChildWindow(hwnd)
+    isChromeWindow := IsChromeLegacyWindow(hwnd)
+    if isChromeWindow != 0 {
+        DebugWindow(childWindow, true)
+    }
+    WinGetPos &x, &y, &w, &h, hwnd
+    return MsgBox(
         (
-            "Visiting All Windows
-            " A_Index " of " ids.Length "
-            Title: " this_title "
-            Vibile: " this_visible "
+            "CHILD: " child "
+            Title: " title "
+            Vibile: " isVisible "
+            IsToolbar: " istoolbar "
+            Style: " style "
+            ExStyle: " exStyle "
+            isChromeWindow: " isChromeWindow "
             X: " x "
             Y: " y "
             W: " w "
             H: " h "
-            Id: " this_id "
+            Id: " hwnd "
 
             Continue?"
-        ),, 4)
-        if (Result = "No")
-            break
-    }
+        ), , 4)
 }

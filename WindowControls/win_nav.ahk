@@ -11,7 +11,12 @@ NavigateWin(Direction) {
     nearestWin := 0
     primaryDistToNearest := 999999
     secondaryDistToNearest := 999999
-    for win in WinGetList(,,) {
+    for win in WinGetList() {
+        chromeLegacyWindow := IsChromeLegacyWindow(win)
+        if chromeLegacyWindow {
+            win := GetChildWindow(win)
+        }
+
         if win = hwin {
             continue
         }
@@ -38,7 +43,12 @@ NavigateWin(Direction) {
             winX + winW / 2, winY + winH / 2,
             &primaryDistToNearest, &secondaryDistToNearest
         ) {
-            nearestWin := win
+            if chromeLegacyWindow {
+                nearestWin := GetParentWindow(win)
+            }
+            else {
+                nearestWin := win
+            }
         }
     }
 

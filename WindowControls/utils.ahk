@@ -1,3 +1,5 @@
+#Requires AutoHotkey v2.0
+
 IsWindowVisible(hwnd) { 
     if WinGetStyle(hwnd) & 0x20000000 {
         return 0
@@ -16,12 +18,29 @@ IsWindowVisible(hwnd) {
     return count
 }
 
+GetChildWindow(hwnd) {
+    GW_CHILD := 5
+    return DllCall("GetWindow", "Ptr", hwnd, "UInt", GW_CHILD, "Ptr")
+}
+
+GetParentWindow(hwnd) {
+    GW_OWNER := 4
+    return DllCall("GetWindow", "Ptr", hwnd, "UInt", GW_OWNER, "Ptr")
+}
+
+IsChromeLegacyWindow(hwnd) {
+    ; TODO: 
+    ; Confirm that the "Chrome Legacy Window" is always the first child.
+    ; If not, we will need to enumerate the child windows and find it. 
+    ; https://www.autohotkey.com/board/topic/46786-enumchildwindows/
+    childWindow := GetChildWindow(hwnd)
+    return RegExMatch(WinGetClass(hwnd), "Chrome_WidgetWin_\d+") != 0 
+        && childWindow != 0 
+        && IsWindowVisible(hwnd) == 0 
+        && WinGetTitle(childWindow) == "Chrome Legacy Window"
+}
+
 WindowFromPoint(X, Y) {
     point := (Y << 32) + X
     return DllCall("WindowFromPoint", "UInt64", point)
-    ; return DllCall(
-    ;     "GetAncestor",
-    ;     "Ptr", DllCall("WindowFromPoint", "UInt64", point),
-    ;     "UInt", 2
-    ; )
 }
