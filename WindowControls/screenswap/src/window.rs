@@ -189,8 +189,8 @@ impl<'a> Window<'a, state::Restored> {
         // Smart swap:
         // If the new monitor has a wastly different aspect ratio,
         // hinting at a different monitor orientations:
-        if (old_aspect_ratio < 1.0 && new_aspect_ratio > 1.0)
-            || (old_aspect_ratio > 1.0 && new_aspect_ratio < 1.0)
+        if (old_aspect_ratio < 1.0 && new_aspect_ratio > 1.0) || 
+            (old_aspect_ratio > 1.0 && new_aspect_ratio < 1.0)
         {
             // scale the window to a fitting size
             new_rel_x = old_mon_norm_y * new_mon_w as f32;
