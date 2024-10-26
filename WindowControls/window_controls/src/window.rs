@@ -10,6 +10,8 @@ use windows::Win32::{
     },
 };
 
+use crate::monitor::Monitor;
+
 
 pub mod state {
     pub struct Restored;
@@ -85,12 +87,12 @@ impl WindowModel {
 
 #[derive(Debug)]
 pub struct Window<'a, State> {
-    info: &'a WindowModel,
+    info: &'a mut WindowModel,
     state: PhantomData<State>,
 }
 
 impl<'a, State> Window<'a, State> {
-    pub fn new(info: &'a WindowModel) -> Self {
+    pub fn new(info: &'a mut WindowModel) -> Self {
         Self {
             info: info,
             state: PhantomData,
@@ -127,16 +129,25 @@ impl<'a, State> Window<'a, State> {
 
     pub unsafe fn restore(self) -> Window<'a, state::Restored> {
         let _ = ShowWindow(self.info.handle, SHOW_WINDOW_CMD(9));
+        self.info.rect = OnceCell::new();
+        self.info.style = OnceCell::new();
+        self.info.visibility = OnceCell::new();
         Window::<state::Restored>::new(self.info)
     }
 
     pub unsafe fn maximize(self) -> Window<'a, state::Maximized> {
         let _ = ShowWindow(self.info.handle, SHOW_WINDOW_CMD(3));
+        self.info.rect = OnceCell::new();
+        self.info.style = OnceCell::new();
+        self.info.visibility = OnceCell::new();
         Window::<state::Maximized>::new(self.info)
     }
 
     pub unsafe fn minimize(self) -> Window<'a, state::Minimized> {
         let _ = ShowWindow(self.info.handle, SHOW_WINDOW_CMD(6));
+        self.info.rect = OnceCell::new();
+        self.info.style = OnceCell::new();
+        self.info.visibility = OnceCell::new();
         Window::<state::Minimized>::new(self.info)
     }
 }
@@ -148,16 +159,51 @@ impl<'a> Window<'a, state::Maximized> {
         old_monitor: RECT,
         new_monitor: RECT,
     ) -> windows::core::Result<Window<'a, state::Maximized>> {
-        let restored_window = Window::<'a, state::Maximized>::restore(self);
+        let mut restored_window = Window::<'a, state::Maximized>::restore(self);
         restored_window.move_screen(old_monitor, new_monitor)?;
+        restored_window.info.rect = OnceCell::new();
+        restored_window.info.style = OnceCell::new();
+        restored_window.info.visibility = OnceCell::new();
         Ok(restored_window.maximize())
     }
 }
 
 impl<'a> Window<'a, state::Restored> {
+    
+    /// Moves the window relative to the current monitor's position.
+    pub unsafe fn move_rel_mon(&mut self, x: i32, y: i32, w: i32, h: i32) -> windows::core::Result<()> {
+        let monitor = Monitor::from(&*self.info);
+        self.move_abs(
+            monitor.get_rect().left + x,
+            monitor.get_rect().top + y, 
+            w, h)
+    }
+
+    /// Moves the window relative to its current position and size. 
+    pub unsafe fn move_rel(&mut self, x: i32, y: i32, w: i32, h: i32) -> windows::core::Result<()> {
+        self.move_abs(
+            self.get_rect().left + x,
+            self.get_rect().top + y, 
+            (self.get_rect().right - self.get_rect().left) + w, 
+            (self.get_rect().bottom - self.get_rect().top) + h)
+    }
+
+    /// Moves the window to an absolute position
+    pub unsafe fn move_abs(&mut self, x: i32, y: i32, w: i32, h: i32) -> windows::core::Result<()> {
+        MoveWindow(
+            self.get_handle(),
+            x, y, w, h,
+            true,
+        )?;
+        self.info.rect = OnceCell::new();
+        self.info.style = OnceCell::new();
+        self.info.visibility = OnceCell::new();
+        Ok(())
+    }
+
     /// Moves the window from one monitor to another
     pub unsafe fn move_screen(
-        &self,
+        &mut self,
         old_monitor: RECT,
         new_monitor: RECT,
     ) -> windows::core::Result<()> {
@@ -202,13 +248,11 @@ impl<'a> Window<'a, state::Restored> {
         let new_abs_x = new_monitor.left + new_rel_x as i32;
         let new_abs_y = new_monitor.top + new_rel_y as i32;
 
-        MoveWindow(
-            self.get_handle(),
+        self.move_abs(
             new_abs_x,
             new_abs_y,
             new_w as i32,
-            new_h as i32,
-            true,
+            new_h as i32
         )
     }
 }
