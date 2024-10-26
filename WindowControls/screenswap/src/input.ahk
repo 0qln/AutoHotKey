@@ -1,15 +1,20 @@
 #Requires AutoHotkey v2.0
-#Include utils.ahk
+; #Include utils.ahk
 
-^!h::MoveAWin("L")
-^!l::MoveAWin("R")
-^!k::MoveAWin("U")
-^!j::MoveAWin("D")
+; Prefetch library
+Dll := DllCall("LoadLibrary", "Str", "..\target\debug\screenswap.dll", "Ptr")
+MoveActiveWin := DllCall("GetProcAddress", "Ptr", Dll, "AStr", "move_active_win", "Ptr")
+MoveAllWin := DllCall("GetProcAddress", "Ptr", Dll, "AStr", "move_all_win", "Ptr")
 
-^!+h::MoveAllWin("L")
-^!+l::MoveAllWin("R")
-^!+k::MoveAllWin("U")
-^!+j::MoveAllWin("D")
+^!h::DllCall(MoveActiveWin, "Int", 0)
+^!k::DllCall(MoveActiveWin, "Int", 1)
+^!l::DllCall(MoveActiveWin, "Int", 2)
+^!j::DllCall(MoveActiveWin, "Int", 3)
+
+^!+h::DllCall(MoveAllWin, "Int", 0)
+^!+k::DllCall(MoveAllWin, "Int", 1)
+^!+l::DllCall(MoveAllWin, "Int", 2)
+^!+j::DllCall(MoveAllWin, "Int", 3)
 
 ; If you want to the window to take on a 
 ; more usable size when swapping to a monitor with 
@@ -18,31 +23,31 @@ SmartSwap := True
 
 ; Move all windowed windows on the current monitor 
 ; in the specified direction
-MoveAllWin(direction) {
-    ; Find all windowes that should get moved
-    activeWin := WinGetId("A")
-    activeMon := GetMonitorFromHwnd(activeWin)
-    wins := WinGetList(,,,)
-    winsToMove := Array()
-    for winId in wins {
-        if (WinGetStyle(winId) & 0x1000000) {
-            continue
-        }
-        if (IsWindowVisible(winId) < 5) {
-            continue
-        }
-        if (GetMonitorFromHwnd(winId) != activeMon) {
-            continue
-        }
-        winsToMove.Push(winId)
-    }
-
-    ; Move the windows after deciding which ones to move to reduce lag
-    newMonitor := GetMonitorInDirection(activeMon, direction)
-    for winId in winsToMove {
-        MoveWinRestored(winId, activeMon, newMonitor)
-    }
-}
+; MoveAllWin(direction) {
+;     ; Find all windowes that should get moved
+;     activeWin := WinGetId("A")
+;     activeMon := GetMonitorFromHwnd(activeWin)
+;     wins := WinGetList(,,,)
+;     winsToMove := Array()
+;     for winId in wins {
+;         if (WinGetStyle(winId) & 0x1000000) {
+;             continue
+;         }
+;         ; if (IsWindowVisible(winId) < 5) {
+;         ;     continue
+;         ; }
+;         if (GetMonitorFromHwnd(winId) != activeMon) {
+;             continue
+;         }
+;         winsToMove.Push(winId)
+;     }
+;
+;     ; Move the windows after deciding which ones to move to reduce lag
+;     newMonitor := GetMonitorInDirection(activeMon, direction)
+;     for winId in winsToMove {
+;         MoveWinRestored(winId, activeMon, newMonitor)
+;     }
+; }
 
 ; Move the active window in the specified direction
 MoveAWin(direction) {
@@ -109,7 +114,7 @@ GetMonitorInDirection(monRelativeTo, direction) {
 
 ; Move the specified window in the specified direction
 MoveWin(direction, winId) {
-    winStyle := winGetStyle(winId)
+    winStyle := WinGetStyle(winId)
     winIsMax := winStyle & 0x1000000
     oldMonitor := GetMonitorFromHwnd(winId)
     newMonitor := GetMonitorInDirection(oldMonitor, direction)
